@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulador Crédito MOTO — UNI2 Microcrédito | Alternativa 1</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+:root{
+  --bg:#F7F8FA;--surface:#FFFFFF;--surface2:#F1F3F7;--border:#E2E6ED;--border2:#CDD3DE;
+  --text:#1A1D23;--text2:#5A6272;--text3:#9AA0AE;
+  --green:#0F6E56;--green-bg:#E1F5EE;--green-bd:#1D9E75;
+  --red:#993C1D;--red-bg:#FAECE7;--red-bd:#D85A30;
+  --blue:#0C447C;--blue-bg:#E6F1FB;--blue-bd:#378ADD;
+  --amber:#854F0B;--amber-bg:#FAEEDA;--amber-bd:#BA7517;
+  --radius:8px;--radius-lg:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:.875rem 2rem;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.hlogo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#1D9E75,#0C447C);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#fff;flex-shrink:0}
+.htitle{font-size:15px;font-weight:600}
+.hsub{font-size:12px;color:var(--text2);margin-top:1px}
+.hbadge{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd);font-size:11px;font-weight:500;padding:3px 12px;border-radius:20px;white-space:nowrap}
+.container{max-width:1060px;margin:0 auto;padding:1.5rem 1.5rem 3rem}
+.divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+.sec{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem}
+.note{font-size:11px;color:var(--text3);line-height:1.6;margin-top:8px}
+.toggle-wrap{display:flex;gap:8px;margin-bottom:1.5rem}
+.toggle-btn{flex:1;padding:10px 8px;border-radius:var(--radius-lg);border:1.5px solid var(--border2);background:var(--surface);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:500;color:var(--text2);text-align:center;transition:all .2s}
+.toggle-btn.active-actual{border-color:var(--blue-bd);background:var(--blue-bg);color:var(--blue)}
+.toggle-btn.active-mejor{border-color:var(--green-bd);background:var(--green-bg);color:var(--green)}
+.toggle-btn .tb-label{font-size:11px;font-weight:400;display:block;margin-top:2px;opacity:.8}
+.alert{border-radius:var(--radius-lg);padding:12px 16px;font-size:12px;line-height:1.7;margin-bottom:1.5rem;border:1px solid}
+.alert-amber{background:var(--amber-bg);border-color:var(--amber-bd);color:var(--amber)}
+.alert-green{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
+.alert-red{background:var(--red-bg);border-color:var(--red-bd);color:var(--red)}
+.slider-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.25rem;margin-bottom:1.5rem}
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.slider-row:last-child{margin-bottom:0}
+.slider-row label{font-size:12px;color:var(--text2);width:240px;flex-shrink:0}
+.slider-row input[type=range]{flex:1;height:4px;appearance:none;background:var(--border2);border-radius:2px;outline:none;cursor:pointer}
+.slider-row input[type=range]::-webkit-slider-thumb{appearance:none;width:18px;height:18px;border-radius:50%;background:var(--green);cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 1.5px var(--green-bd)}
+.sval{font-size:13px;font-weight:600;color:var(--text);min-width:48px;text-align:right;font-family:'JetBrains Mono',monospace}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:1.5rem}
+.kcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 15px}
+.kcard.actual{border-color:var(--blue-bd);background:var(--blue-bg)}
+.kcard.mejor{border-color:var(--green-bd);background:var(--green-bg)}
+.kcard.warn{border-color:var(--red-bd);background:var(--red-bg)}
+.kcard .kl{font-size:11px;color:var(--text2);margin-bottom:6px;line-height:1.3}
+.kcard.actual .kl,.kcard.actual .kv{color:var(--blue)}
+.kcard.mejor .kl,.kcard.mejor .kv{color:var(--green)}
+.kcard.warn .kl,.kcard.warn .kv{color:var(--red)}
+.kcard .kv{font-size:22px;font-weight:600;font-family:'JetBrains Mono',monospace;color:var(--text)}
+.kcard .kd{font-size:10px;margin-top:3px;color:var(--text2)}
+.kcard.mejor .kd{color:var(--green)}
+/* NVA FLOW — horizontal con flechas */
+.flow-wrap{overflow-x:auto;margin-bottom:1.25rem}
+.flow-row{display:flex;align-items:flex-start;gap:0;min-width:700px}
+.fstage{flex:1;min-width:0}
+.fbox{border-radius:var(--radius);padding:10px 8px 8px;border:1px solid var(--border);background:var(--surface);margin:0 3px}
+.fbox.bot-act{border-color:var(--red-bd);border-width:2px}
+.fbox.bot-new{border-color:var(--green-bd);border-width:2px}
+.fbox.uncertain{border-style:dashed;border-color:var(--amber-bd)}
+.farrow{display:flex;align-items:center;padding-top:22px;color:var(--text3);font-size:20px;flex-shrink:0;padding-left:2px;padding-right:2px}
+.fn{font-size:10px;font-weight:600;color:var(--text);margin-bottom:5px;line-height:1.3}
+.fslbl{font-size:9px;color:var(--text3);margin-bottom:1px}
+.fsval{font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.fsdelta{font-size:9px;font-weight:500;margin-top:2px}
+.chart-wrap{position:relative;width:100%;height:210px;margin-bottom:.5rem}
+.chart-wrap-sm{position:relative;width:100%;height:160px;margin-bottom:.5rem}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--text2);margin-top:6px;margin-bottom:1rem}
+.ldot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+.lline{width:16px;height:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+table.cmp{width:100%;border-collapse:collapse;font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+table.cmp th{background:var(--surface2);color:var(--text2);padding:8px 12px;text-align:left;font-weight:600;font-size:11px;border-bottom:1px solid var(--border)}
+table.cmp td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+table.cmp tr:last-child td{border-bottom:none}
+table.cmp tr.win-row td{background:var(--green-bg)}
+table.cmp tr.win-row td.pos{color:var(--green);font-weight:600}
+table.cmp tr.cur-row{outline:2px solid var(--blue-bd);outline-offset:-2px}
+.vsm-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:.5rem}
+.vsm-table th{background:var(--surface2);color:var(--text2);padding:7px 12px;text-align:left;font-weight:600;font-size:11px;border-bottom:1px solid var(--border)}
+.vsm-table td{padding:7px 12px;border-bottom:1px solid var(--border);color:var(--text);font-family:'JetBrains Mono',monospace;font-size:12px}
+.vsm-table td:first-child{font-family:'Inter',sans-serif;color:var(--text2)}
+.vsm-table tr.bot td{background:var(--red-bg);color:var(--red)}
+.vsm-table tr.bot td:first-child{color:var(--red)}
+.vsm-table tr.uncertain td{background:var(--amber-bg);color:var(--amber)}
+.vsm-table tr.uncertain td:first-child{color:var(--amber)}
+.footer{text-align:center;font-size:11px;color:var(--text3);padding:1.5rem 0 .5rem;border-top:1px solid var(--border);margin-top:2rem}
+@media(max-width:720px){.kpi-grid{grid-template-columns:1fr 1fr}.toggle-wrap{flex-direction:column}header{flex-wrap:wrap;gap:8px}}
+</style>
+</head>
+<body>
+
+<header>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="hlogo">U2</div>
+    <div>
+      <div class="htitle">Simulador — Crédito MOTO · UNI2 Microcrédito</div>
+      <div class="hsub">Sedes Cali · Modelo NVA estructural calibrado con VSM 2025 (n=21)</div>
+    </div>
+  </div>
+  <span class="hbadge">Alternativa 1 — Célula de seguimiento</span>
+</header>
+
+<div class="container">
+
+  <div class="sec">Selecciona el escenario</div>
+  <div class="toggle-wrap">
+    <button class="toggle-btn active-actual" id="btnActual" onclick="setScenario('actual')">
+      Escenario actual 2025
+      <span class="tb-label">Sin célula · Conversión: 16,2% · Lead time: 13,49 d</span>
+    </button>
+    <button class="toggle-btn" id="btnMejor" onclick="setScenario('mejor')">
+      Escenario mejorado — Alternativa 1
+      <span class="tb-label">Con célula de seguimiento · Meta: ≥ 20%</span>
+    </button>
+  </div>
+
+  <!-- ══ PANEL ACTUAL ══════════════════════════════════════════════════════ -->
+  <div id="panelActual">
+
+    <div class="alert alert-red">
+      <strong>Diagnóstico crítico — VSM actual 2025 (sedes Cali):</strong>
+      El lead time promedio es <strong>13,49 días</strong>, de los cuales <strong>13,3 días son NVA (98,7%)</strong> y solo 2,6 horas son VA (flow efficiency 1,3%). Hay dos cuellos de botella NVA identificados:<br>
+      (1) <strong>Ejecutivo → Análisis: 6,97 días</strong> — espera estructural por falta de seguimiento (n=7, dato robusto).<br>
+      (2) <strong>Legalización → Desembolso: 22,4 días</strong> — altísima variabilidad (0,06 d vs 44,71 d), solo n=2 casos con registro completo. Representa el tramo más crítico pero también el más incierto del proceso.
+    </div>
+
+    <div class="sec">Indicadores actuales</div>
+    <div class="kpi-grid">
+      <div class="kcard actual"><div class="kl">Lead time promedio</div><div class="kv">13,49 d</div><div class="kd">TNVA 13,3 d · TVA 2,6 h · n=21</div></div>
+      <div class="kcard actual"><div class="kl">Tasa de conversión</div><div class="kv">16,2%</div><div class="kd">755 desembolsos de 4.674 solicitudes</div></div>
+      <div class="kcard warn"><div class="kl">NVA Legal → Desembolso</div><div class="kv">22,4 d</div><div class="kd">Alta variabilidad · n=2 · ⚠ dato cautelar</div></div>
+      <div class="kcard warn"><div class="kl">NVA Ejec → Análisis</div><div class="kv">6,97 d</div><div class="kd">Cuello de botella principal · n=7</div></div>
+    </div>
+
+    <div class="sec">VSM actual — tiempos NVA por etapa (datos directos del VSM)</div>
+    <table class="vsm-table">
+      <thead><tr><th>Etapa</th><th>TNVA promedio</th><th>n (casos VSM)</th><th>Mínimo</th><th>Máximo</th><th>Observación</th></tr></thead>
+      <tbody>
+        <tr><td>Orig → Ejecutivo</td><td>0,01 d</td><td>7</td><td>0,00 d</td><td>0,06 d</td><td style="font-family:Inter,sans-serif;font-size:11px;color:var(--text2)">Asignación en máx. 1 hora</td></tr>
+        <tr class="bot"><td>Ejecutivo → Análisis</td><td>6,97 d</td><td>7</td><td>0,93 d</td><td>15,75 d</td><td style="font-family:Inter,sans-serif;font-size:11px">Cuello de botella 1 — dato robusto</td></tr>
+        <tr><td>Análisis → Comité</td><td>0,73 d</td><td>7</td><td>0,01 d</td><td>2,94 d</td><td style="font-family:Inter,sans-serif;font-size:11px;color:var(--text2)">Espera pre-comité</td></tr>
+        <tr><td>Comité → Legalización</td><td>0,27 d</td><td>7</td><td>0,03 d</td><td>0,81 d</td><td style="font-family:Inter,sans-serif;font-size:11px;color:var(--text2)">Baja variabilidad</td></tr>
+        <tr class="uncertain"><td>Legalización → Desembolso</td><td>22,4 d ⚠</td><td>2*</td><td>0,06 d</td><td>44,71 d</td><td style="font-family:Inter,sans-serif;font-size:11px">Cuello de botella 2 — n muy bajo, alta variabilidad</td></tr>
+      </tbody>
+    </table>
+    <p class="note">* Solo 2 casos con trazabilidad completa en este tramo. El promedio de 22,4 d debe interpretarse con cautela según el VSM. Sin embargo, la variabilidad extrema (0,06 d vs 44,71 d) confirma que este tramo es el de mayor riesgo de vencimiento del límite de 35 días hábiles.</p>
+
+    <div class="divider"></div>
+    <div class="sec">NVA por etapa — escala visual</div>
+    <div class="flow-wrap">
+      <div class="flow-row" id="flowActual"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sec">Distribución de solicitudes 2025 — sedes Cali</div>
+    <div class="chart-wrap"><canvas id="barActual" role="img" aria-label="755 desembolsadas, 1685 desistidas, 2234 rechazadas o en otro estado en 2025"></canvas></div>
+
+  </div>
+
+  <!-- ══ PANEL MEJORADO ════════════════════════════════════════════════════ -->
+  <div id="panelMejor" style="display:none">
+
+    <div class="alert alert-green">
+      <strong>Alternativa 1 — Célula de seguimiento y priorización temprana:</strong>
+      La célula actúa sobre los <strong>dos cuellos de botella NVA</strong> identificados en el VSM: reduce el NVA de Ejecutivo → Análisis (6,97 d) mediante seguimiento activo diario, y reduce el NVA de Legalización → Desembolso (22,4 d) acompañando la formalización y alertando vencimientos. No modifica la dotación total ni los controles normativos. Las personas son reasignadas del equipo de Pre-Comité / Mesa (7 analistas confirmados).
+    </div>
+
+    <div class="slider-section">
+      <div class="slider-row">
+        <label>Personas en la célula (de los 7 analistas)</label>
+        <input type="range" id="celSlider" min="0" max="4" step="1" value="2" oninput="updateMejor()">
+        <span class="sval" id="celVal">2</span>
+      </div>
+      <div class="slider-row">
+        <label>Reducción del NVA Ejec→Análisis por persona (%)</label>
+        <input type="range" id="redEjSlider" min="10" max="30" step="1" value="18" oninput="updateMejor()">
+        <span class="sval" id="redEjVal">18%</span>
+      </div>
+      <div class="slider-row">
+        <label>Reducción del NVA Legal→Desembolso por persona (%)</label>
+        <input type="range" id="redLgSlider" min="5" max="50" step="1" value="25" oninput="updateMejor()">
+        <span class="sval" id="redLgVal">25%</span>
+      </div>
+    </div>
+    <p class="note" style="margin-bottom:1.25rem">La reducción del NVA Legal→Desembolso tiene alta incertidumbre (n=2 en VSM). El rango conservador es 20-35%. Rendimientos decrecientes aplicados: 1 persona = 1x · 2 = 1,75x · 3 = 2,25x · 4 = 2,6x.</p>
+
+    <div class="sec">Indicadores con célula activa</div>
+    <div class="kpi-grid" id="kpisMejor"></div>
+
+    <div class="sec">NVA por etapa — actual vs con célula (días)</div>
+    <div class="flow-wrap">
+      <div class="flow-row" id="flowMejor"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="sec">Impacto por número de personas en la célula</div>
+    <div class="chart-wrap"><canvas id="impactoChart" role="img" aria-label="Lead time y tasa de conversión estimada según número de personas en la célula de seguimiento"></canvas></div>
+    <div class="legend" id="legImpacto"></div>
+
+    <div class="sec" style="margin-top:1rem">Reducción de NVA por tramo según configuración</div>
+    <div class="chart-wrap"><canvas id="nvaChart" role="img" aria-label="NVA por tramo (Ejec-Análisis y Legal-Desembolso) en escenario actual y con célula según personas asignadas"></canvas></div>
+    <div class="legend" id="legNva"></div>
+
+    <div class="divider"></div>
+    <div class="sec">Tabla comparativa de escenarios</div>
+    <table class="cmp" id="tblMejor"></table>
+    <p class="note">* Célula=0 reproduce exactamente el escenario actual (conv 16,2%, LT 13,49 d). El LT de 13,49 d no incluye el tramo Legal→Desembolso porque el VSM lo reporta por separado con n=2. El modelo suma ambos NVA para estimar el riesgo de vencimiento del límite de 35 días. Monto promedio crédito MOTO: $6.000.000 COP.</p>
+
+  </div>
+
+  <div class="divider"></div>
+  <div class="footer">
+    Elaborado por Cardona · Escobar · Pachón — Universidad Autónoma de Occidente · Ingeniería Industrial · 2026<br>
+    Fuente: VSM Actual UNI2 (2025) · Proyecto Integrador UNI2 Microcrédito (2025)
+  </div>
+
+</div>
+
+<script>
+// ─── DATOS VSM REALES ─────────────────────────────────────────────────────
+const VSM = {
+  nva: { orig:0.01, ejec:6.97, anal:0.73, comite:0.27, legal:22.4 },
+  va:  { ejec:0.33, comite:1.43, legal:1.40, desemb:0.07 },
+  n:   { orig:7,    ejec:7,    anal:7,     comite:7,    legal:2 },
+  lt: 13.49,    // lead time promedio reportado (excluye legal→desemb por n=2)
+  tnva: 13.3,   // TNVA del lead time reportado
+  conv: 0.162, des: 1685, desemb: 755, sol: 4674,
+  monto: 6000000
+};
+
+// NVA total incluyendo legal→desemb (riesgo de vencimiento 35 días)
+const NVA_TOTAL_RIESGO = VSM.nva.orig + VSM.nva.ejec + VSM.nva.anal + VSM.nva.comite + VSM.nva.legal;
+// = 30.38 d → excede el límite de 35 días en casos extremos
+
+const STAGES = [
+  {key:'orig',   name:'Orig →\nEjecutivo',     bot:false, uncertain:false, nVSM:7},
+  {key:'ejec',   name:'Ejec →\nAnálisis',       bot:true,  uncertain:false, nVSM:7},
+  {key:'anal',   name:'Análisis →\nComité',      bot:false, uncertain:false, nVSM:7},
+  {key:'comite', name:'Comité →\nLegal.',        bot:false, uncertain:false, nVSM:7},
+  {key:'legal',  name:'Legal →\nDesembolso',     bot:true,  uncertain:true,  nVSM:2},
+];
+
+const DEC = [0, 1, 1.75, 2.25, 2.6];
+
+function calcMejor(cel, redEj, redLg) {
+  if (cel === 0) {
+    return {
+      nva_ejec: VSM.nva.ejec,   delta_ejec: 0,
+      nva_legal: VSM.nva.legal, delta_legal: 0,
+      lt: VSM.lt, conv: VSM.conv,
+      des: VSM.des, desemb: VSM.desemb,
+      monto_rec: 0, nva_total_riesgo: NVA_TOTAL_RIESGO
+    };
+  }
+  const rf_ej = Math.min((redEj/100) * DEC[cel], 0.75);
+  const rf_lg = Math.min((redLg/100) * DEC[cel], 0.80);
+  const nva_ejec  = VSM.nva.ejec  * (1 - rf_ej);
+  const nva_legal = VSM.nva.legal * (1 - rf_lg);
+  const delta_ejec  = VSM.nva.ejec  - nva_ejec;
+  const delta_legal = VSM.nva.legal - nva_legal;
+
+  // Lead time mejorado (base: 13.49d que excluye legal→desemb)
+  const lt = Math.max(VSM.lt - delta_ejec * 0.85, 1.5);
+
+  // Conversión: calibrada en base exacta (cel=0 → 16.2%)
+  const lt_red = (VSM.lt - lt) / VSM.lt;
+  const conv = Math.min(VSM.conv + lt_red * 0.30, 0.38);
+  const des  = Math.round(VSM.des * (1 - lt_red * 0.55));
+  const desemb = Math.round(VSM.desemb + (VSM.des - des) * 0.45);
+  const monto_rec = (VSM.des - des) * 0.45 * VSM.monto;
+  const nva_total_riesgo = VSM.nva.orig + nva_ejec + VSM.nva.anal + VSM.nva.comite + nva_legal;
+
+  return { nva_ejec, delta_ejec, nva_legal, delta_legal, lt, conv, des, desemb, monto_rec, nva_total_riesgo };
+}
+
+function pct(v){ return (v*100).toFixed(1)+'%'; }
+function fmt(v){ return Math.round(v).toLocaleString('es-CO'); }
+function fmtM(v){ return '$'+(v/1e6).toFixed(1)+'M'; }
+function fmtD(v){ return v.toFixed(2)+' d'; }
+
+// ─── FLOW DIAGRAM ─────────────────────────────────────────────────────────
+function buildFlow(d) {
+  const isActual = (d == null);
+  const nva = {
+    orig:   VSM.nva.orig,
+    ejec:   isActual ? VSM.nva.ejec  : d.nva_ejec,
+    anal:   VSM.nva.anal,
+    comite: VSM.nva.comite,
+    legal:  isActual ? VSM.nva.legal : d.nva_legal
+  };
+  return STAGES.map((s, i) => {
+    const vAct = VSM.nva[s.key];
+    const vNew = nva[s.key];
+    const delta = vAct - vNew;
+    const isBot = s.bot;
+    const colorAct = isBot ? (s.uncertain ? '#BA7517' : '#D85A30') : '#378ADD';
+    const colorNew = '#0F6E56';
+    const boxClass = isBot
+      ? (s.uncertain ? 'fbox uncertain' : 'fbox bot-act')
+      : 'fbox';
+    const boxClassNew = isBot
+      ? (s.uncertain ? 'fbox bot-new uncertain' : 'fbox bot-new')
+      : 'fbox';
+
+    const arrow = i < STAGES.length-1 ? '<div class="farrow">›</div>' : '';
+
+    if (isActual) {
+      return `<div class="fstage">
+        <div class="${boxClass}">
+          <div class="fn">${s.name.replace('\n','<br>')}</div>
+          <div class="fslbl">NVA — muestra VSM: ${s.nVSM}${s.uncertain?'*':''}  casos</div>
+          <div class="fsval" style="color:${colorAct}">${fmtD(vAct)}</div>
+          ${isBot?`<div class="fsdelta" style="color:${colorAct}">${s.uncertain?'⚠ alta variabilidad':'cuello de botella'}</div>`:''}
+        </div>
+      </div>${arrow}`;
+    } else {
+      return `<div class="fstage">
+        <div class="${boxClassNew}">
+          <div class="fn">${s.name.replace('\n','<br>')}</div>
+          <div class="fslbl">Actual</div>
+          <div class="fsval" style="color:${colorAct}">${fmtD(vAct)}</div>
+          ${isBot && delta > 0.01 ? `
+            <div class="fslbl" style="margin-top:4px">Con célula</div>
+            <div class="fsval" style="color:${colorNew}">${fmtD(vNew)}</div>
+            <div class="fsdelta" style="color:${colorNew}">−${fmtD(delta)}</div>` : ''}
+        </div>
+      </div>${arrow}`;
+    }
+  }).join('');
+}
+
+// ─── PANEL ACTUAL ─────────────────────────────────────────────────────────
+let barActC = null;
+function renderActual() {
+  document.getElementById('flowActual').innerHTML = buildFlow(null);
+  if (barActC) barActC.destroy();
+  barActC = new Chart(document.getElementById('barActual'), {
+    type:'bar',
+    data:{
+      labels:['Desembolsadas','Desistidas','Rechazadas / otro'],
+      datasets:[{
+        data:[VSM.desemb, VSM.des, VSM.sol - VSM.desemb - VSM.des],
+        backgroundColor:['#B5D4F4','#F5C4B3','#D3D1C7'],
+        borderColor:['#378ADD','#D85A30','#888780'],borderWidth:1
+      }]
+    },
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{y:{ticks:{callback:v=>fmt(v),font:{size:11}},grid:{color:'#E2E6ED'}},
+              x:{ticks:{font:{size:11}},grid:{display:false}}}}
+  });
+}
+
+// ─── PANEL MEJORADO ───────────────────────────────────────────────────────
+let impactoC = null, nvaC = null;
+
+function updateMejor() {
+  const cel  = +document.getElementById('celSlider').value;
+  const redEj= +document.getElementById('redEjSlider').value;
+  const redLg= +document.getElementById('redLgSlider').value;
+  document.getElementById('celVal').textContent  = cel;
+  document.getElementById('redEjVal').textContent = redEj+'%';
+  document.getElementById('redLgVal').textContent = redLg+'%';
+
+  const d = calcMejor(cel, redEj, redLg);
+
+  // KPIs
+  document.getElementById('kpisMejor').innerHTML = [
+    {l:'NVA Ejec → Análisis',        v:fmtD(d.nva_ejec),  d2:'vs 6,97 d actual  (−'+fmtD(d.delta_ejec)+')',      c: d.delta_ejec>0?'mejor':''},
+    {l:'NVA Legal → Desembolso ⚠',   v:fmtD(d.nva_legal), d2:'vs 22,4 d actual (−'+fmtD(d.delta_legal)+') · n=2',c: d.delta_legal>0?'mejor':''},
+    {l:'Lead time estimado',          v:fmtD(d.lt),        d2:'vs 13,49 d actual',                                 c:'mejor'},
+    {l:'Conversión estimada',         v:pct(d.conv),       d2:d.conv>=0.20?'✓ meta 20% alcanzada':'meta: 20%',    c:d.conv>=0.20?'mejor':'warn'},
+  ].map(k=>`<div class="kcard ${k.c}">
+    <div class="kl">${k.l}</div><div class="kv">${k.v}</div><div class="kd">${k.d2}</div>
+  </div>`).join('');
+
+  // Flow
+  document.getElementById('flowMejor').innerHTML = buildFlow(d);
+
+  // Gráfica impacto
+  const cels=[0,1,2,3,4];
+  const lts   = cels.map(c=>parseFloat(calcMejor(c,redEj,redLg).lt.toFixed(2)));
+  const convs = cels.map(c=>parseFloat((calcMejor(c,redEj,redLg).conv*100).toFixed(1)));
+  if(impactoC) impactoC.destroy();
+  impactoC = new Chart(document.getElementById('impactoChart'),{
+    type:'bar',
+    data:{labels:cels.map(c=>'Célula='+c+(c===0?' (actual)':'')),datasets:[
+      {label:'Lead time (d)',data:lts,
+        backgroundColor:cels.map(c=>c===cel?'#378ADD':'#B5D4F4'),
+        borderColor:cels.map(c=>c===cel?'#0C447C':'#378ADD'),borderWidth:1,yAxisID:'y'},
+      {label:'Conversión (%)',data:convs,type:'line',
+        borderColor:'#D85A30',backgroundColor:'transparent',borderWidth:2,
+        pointBackgroundColor:convs.map(v=>v>=20?'#0F6E56':'#D85A30'),
+        pointRadius:6,pointBorderColor:'#fff',pointBorderWidth:2,yAxisID:'y2'}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        y:{position:'left',title:{display:true,text:'Lead time (días)',font:{size:10}},
+           ticks:{font:{size:10}},grid:{color:'#E2E6ED'}},
+        y2:{position:'right',title:{display:true,text:'Conversión (%)',font:{size:10}},
+            min:14,max:26,ticks:{callback:v=>v+'%',font:{size:10}},grid:{drawOnChartArea:false}}
+      }}
+  });
+  document.getElementById('legImpacto').innerHTML=
+    `<span><span class="ldot" style="background:#B5D4F4;border:1px solid #378ADD"></span>Lead time</span>
+     <span><span class="ldot" style="background:#378ADD;border:1px solid #0C447C"></span>Configuración activa</span>
+     <span style="display:flex;align-items:center;gap:4px"><span class="lline" style="background:#D85A30"></span>Conversión</span>
+     <span><span class="ldot" style="background:#0F6E56;border-radius:50%;border:1px solid #0F6E56"></span>≥ meta 20%</span>`;
+
+  // Gráfica NVA por tramo
+  const ejecs = cels.map(c=>parseFloat(calcMejor(c,redEj,redLg).nva_ejec.toFixed(2)));
+  const legals= cels.map(c=>parseFloat(calcMejor(c,redEj,redLg).nva_legal.toFixed(2)));
+  if(nvaC) nvaC.destroy();
+  nvaC = new Chart(document.getElementById('nvaChart'),{
+    type:'bar',
+    data:{labels:cels.map(c=>'Célula='+c+(c===0?' (actual)':'')),datasets:[
+      {label:'NVA Ejec→Análisis (d)',data:ejecs,backgroundColor:'#F5C4B3',borderColor:'#D85A30',borderWidth:1},
+      {label:'NVA Legal→Desembolso (d) ⚠',data:legals,backgroundColor:'#FAC775',borderColor:'#BA7517',borderWidth:1},
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{stacked:false,ticks:{font:{size:11}},grid:{display:false}},
+        y:{beginAtZero:true,title:{display:true,text:'Días NVA',font:{size:10}},
+           ticks:{font:{size:10}},grid:{color:'#E2E6ED'}}
+      }}
+  });
+  document.getElementById('legNva').innerHTML=
+    `<span><span class="ldot" style="background:#F5C4B3;border:1px solid #D85A30"></span>NVA Ejec→Análisis</span>
+     <span><span class="ldot" style="background:#FAC775;border:1px solid #BA7517"></span>NVA Legal→Desembolso ⚠ (n=2, dato cautelar)</span>`;
+
+  // Tabla
+  const rows = cels.map(c=>{
+    const r = calcMejor(c,redEj,redLg);
+    return {c, win:r.conv>=0.20, cur:c===cel, cols:[
+      c===0?'Sin célula (actual)':'Célula = '+c+' persona'+(c!==1?'s':''),
+      fmtD(r.nva_ejec), fmtD(r.nva_legal),
+      fmtD(r.lt), pct(r.conv),
+      fmt(r.des),
+      c===0?'—':fmtM(r.monto_rec)
+    ]};
+  });
+  document.getElementById('tblMejor').innerHTML=
+    `<thead><tr><th>Configuración</th><th>NVA ejec→an.</th><th>NVA legal→desemb.</th>
+     <th>Lead time</th><th>Conversión</th><th>Desistidos</th><th>Impacto econ.</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr class="${r.win?'win-row':''} ${r.cur?'cur-row':''}">
+      ${r.cols.map((c,i)=>`<td class="${r.win&&i===4?'pos':''}">${c}${r.win&&i===4?' ✓':''}</td>`).join('')}
+    </tr>`).join('')}</tbody>`;
+}
+
+// ─── ESCENARIO ────────────────────────────────────────────────────────────
+function setScenario(s) {
+  document.getElementById('panelActual').style.display = s==='actual'?'':'none';
+  document.getElementById('panelMejor').style.display  = s==='mejor' ?'':'none';
+  document.getElementById('btnActual').className='toggle-btn'+(s==='actual'?' active-actual':'');
+  document.getElementById('btnMejor').className ='toggle-btn'+(s==='mejor' ?' active-mejor':'');
+  if (s==='actual') renderActual();
+  if (s==='mejor')  updateMejor();
+}
+
+renderActual();
+</script>
+</body>
+</html>
